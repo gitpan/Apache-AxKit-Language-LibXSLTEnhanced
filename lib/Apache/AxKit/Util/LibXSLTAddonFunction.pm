@@ -39,6 +39,7 @@ __END__
 Apache::AxKit::Util::LibXSLTAddonFunction - AxKit extension to load perl callbacks for XSL
 
 =head1 SYNOPSIS
+
   package Apache::AxKit::Util::MiscAddonFunctions;
 
   use base qw( Apache::AxKit::Util::LibXSLTAddonFunction );
@@ -50,16 +51,18 @@ Apache::AxKit::Util::LibXSLTAddonFunction - AxKit extension to load perl callbac
   sub init {
       my $this = shift;
     
-      $this->addRegisteredFunction( "createXMLTreeFromEscapedTags", \&createXMLTreeFromEscapedTags );
+      $this->addRegisteredFunction( "staticFunction", \&staticFunction );
+      $this->addRegisteredFunction( "instanceMethod", sub { $this->instanceMethod( @_ ) } );
   }
 
   sub getNamespace {
-      return "urn:perl-misc-addon";
+      return "urn:perl-example-addon";
   }
 
-  sub createXMLTreeFromEscapedTags {
+  sub staticMethod {
       my $val  = shift;
 
+      ## this is not 100% correct
       $val =~ s/<\s+/&lt;/;
     
       my $doc = $parser->parse_string(<<"EOT");
@@ -70,7 +73,34 @@ Apache::AxKit::Util::LibXSLTAddonFunction - AxKit extension to load perl callbac
       return $doc->getElementsByTagName("tree");
   }
 
+  sub instanceMethod {
+      my $this = shift;
+      my $val  = shift;
+
+     ## this is not 100% correct
+      $val =~ s/<\s+/&lt;/;
+
+      my $doc = $parser->parse_string(<<"EOT");
+  <tree>
+  $val
+  </tree>
+  EOT
+      return $doc->getElementsByTagName("tree");
+  }
+
   1;
+
+  ## in XSL
+  <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                              xmlns:UML="org.omg.xmi.namespace.UML"
+                              xmlns:str="http://exslt.org/strings"
+                              xmlns:pma="urn:perl-example-addon"
+                              xmlns:exslt="http://exslt.org/common"
+                              extension-element-prefixes="str">
+  ....
+  <xsl:value-of select="pma:staticMethod('Hallo')" /> 
+  <xsl:value-of select="pma:instanceMethod('Hallo')" /> 
+  ....
 
 =head1 DESCRIPTION
 
